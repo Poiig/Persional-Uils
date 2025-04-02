@@ -23,6 +23,7 @@ set "GEOIP_DAT=geoip.dat"
 set "GEOSITE_DAT=geosite.dat"
 set "GEOIP_METADB=geoip.metadb"
 set "ASN_MMDB=ASN.mmdb"
+set "COUNTRY_MMDB=country.mmdb"
 
 :: ===== 初始化 =====
 :: 记录日志
@@ -62,6 +63,10 @@ if !errorlevel! neq 0 set "DOWNLOAD_SUCCESS=false"
 
 :: 下载ASN.mmdb
 call :download_file "%ASNDB_URL%" "%TEMP_DIR%\%ASN_MMDB%"
+if !errorlevel! neq 0 set "DOWNLOAD_SUCCESS=false"
+
+:: 下载country.mmdb
+call :download_file "%COUNTRY_URL%" "%TEMP_DIR%\%COUNTRY_MMDB%"
 if !errorlevel! neq 0 set "DOWNLOAD_SUCCESS=false"
 
 :: 如果有下载失败，则终止程序
@@ -164,7 +169,7 @@ set "TARGET_DIR=%~1"
 if not exist "%TARGET_DIR%" mkdir "%TARGET_DIR%"
 call :log "开始更新目录: %TARGET_DIR%"
 
-for %%F in ("%GEOIP_DAT%" "%GEOSITE_DAT%" "%GEOIP_METADB%" "%ASN_MMDB%") do (
+for %%F in ("%GEOIP_DAT%" "%GEOSITE_DAT%" "%GEOIP_METADB%" "%ASN_MMDB%" "%COUNTRY_MMDB%") do (
     copy /Y "%TEMP_DIR%\%%~F" "%TARGET_DIR%\%%~F" >nul
     if !errorlevel! equ 0 (
         call :log "文件已复制到: %TARGET_DIR%\%%~F"
