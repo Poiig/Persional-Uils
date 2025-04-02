@@ -1,53 +1,32 @@
 # mihomo-party 规则文件更新工具
 
-这个工具用于自动下载并更新 mihomo 相关规则文件，支持 Python 和批处理两种运行方式。
+这个工具用于自动下载并更新 mihomo 相关规则文件。支持批处理脚本运行方式，具有多种下载方式自动切换、详细日志记录等功能。
 
-## 功能
+## 功能特点
 
 - 自动下载以下规则文件：
   - geoip.dat (来自 Loyalsoldier/v2ray-rules-dat)
   - geosite.dat (来自 Loyalsoldier/v2ray-rules-dat)
   - geoip.metadb (来自 MetaCubeX/meta-rules-dat)
   - ASN.mmdb (从 GeoLite2-ASN.mmdb 重命名)
-- 自动更新用户 AppData 目录下的 mihomo-party/test 和 mihomo-party/work 目录
-- 自动更新 work 子目录下的文件
-- 支持自定义下载文件的 URL
-- 详细的日志记录
-- 多种下载方式自动尝试，提高下载成功率
+- 多种下载方式自动切换（curl、PowerShell WebClient、BITS）
+- 详细的日志记录（按日期分类）
+- 自动更新以下目录：
+  - `%APPDATA%\mihomo-party\test`
+  - `%APPDATA%\mihomo-party\work`
+  - `work` 目录下的所有子目录
 
 ## 使用方法
 
-### 批处理脚本 (.bat)
-
-直接双击 `update_rules_data.bat` 即可运行。
-
-### Python 脚本
-
-确保已安装 Python 3.6+ 和以下依赖：
-```
-requests
-```
-
-然后运行：
-```
-python update_rules_data.py
-```
+直接双击运行 `update_rules_data.bat` 即可。脚本会自动：
+1. 创建必要的目录（temp、log）
+2. 下载最新的规则文件
+3. 更新所有目标目录
+4. 记录详细日志
 
 ## 配置文件
 
-首次运行时会自动生成配置文件 `config.ini`，可以根据需要修改下载 URL：
-
-### Python 脚本配置格式
-
-```ini
-[URLS]
-geoip.dat=https://testingcf.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geoip.dat
-geosite.dat=https://testingcf.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat
-geoip.metadb=https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.metadb
-ASN.mmdb=https://gh-proxy.com/https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/GeoLite2-ASN.mmdb
-```
-
-### 批处理脚本配置格式
+首次运行时会自动创建配置文件 `config.ini`，包含下载地址配置：
 
 ```ini
 [URLS]
@@ -57,93 +36,58 @@ GEOIPDB_URL=https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/g
 ASNDB_URL=https://gh-proxy.com/https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/GeoLite2-ASN.mmdb
 ```
 
-## 目标目录
+可以根据需要修改配置文件中的下载地址。
 
-脚本将自动将下载的文件更新到以下目录：
+## 日志记录
 
-- `%APPDATA%\mihomo-party\test`
-- `%APPDATA%\mihomo-party\work`
-- `%APPDATA%\mihomo-party\work` 下的所有子目录
+- 日志文件保存在 `log` 目录下
+- 使用 `YYYY-MM-DD.log` 格式命名
+- 同一天的多次运行会追加到同一个日志文件
+- 记录内容包括：
+  - 下载过程
+  - 文件更新状态
+  - 错误信息
 
-注意：目录路径基于环境变量 `%APPDATA%`，不可配置。
+## 目录结构
 
-## 下载问题排查
-
-如果遇到下载失败，请尝试以下方法：
-
-### 1. 检查网络连接
-
-确保您的电脑能够正常访问互联网，特别是能够访问 GitHub 相关的服务。
-
-### 2. 检查配置文件中的 URL
-
-检查 `config.ini` 文件中的 URL 是否正确。如果 URL 已过期或无法访问，请尝试更新为新的可用地址。
-
-### 3. 查看日志文件
-
-脚本会生成详细的日志文件 `update_log.txt`，请查看以了解具体错误原因。
-
-### 4. 常见问题及解决方法
-
-#### 问题1: PowerShell 脚本执行策略限制
-
-如果遇到关于 PowerShell 执行策略的错误，可以尝试以管理员身份运行 PowerShell 并执行：
-
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope CurrentUser
+```
+mihomo-party/
+├── update_rules_data.bat    # 主程序
+├── config.ini              # 配置文件
+├── temp/                   # 临时文件目录
+└── log/                    # 日志目录
+    └── YYYY-MM-DD.log     # 日志文件
 ```
 
-#### 问题2: SSL/TLS 证书验证失败
+## 故障排除
 
-如果遇到SSL证书验证错误，可以尝试在Python脚本中添加：
+### 下载失败
 
-```python
-import ssl
-ssl._create_default_https_context = ssl._create_unverified_context
-```
+如果遇到下载失败，脚本会自动尝试不同的下载方法：
 
-或者尝试使用HTTP代理。
+1. 首先尝试使用 curl 下载
+2. 如果 curl 失败，尝试使用 PowerShell WebClient
+3. 如果 WebClient 失败，尝试使用 BITS 传输
 
-#### 问题3: 防火墙或安全软件拦截
+可以查看日志文件了解具体失败原因。
 
-某些安全软件可能会拦截脚本的网络请求，请尝试暂时关闭防火墙或安全软件，或将脚本添加到白名单。
+### 常见问题解决
 
-#### 问题4: 无法正常解析域名
+1. 网络连接问题
+   - 检查网络连接
+   - 确认是否可以访问 GitHub
+   - 考虑使用代理或镜像站点
 
-尝试修改系统的DNS服务器，例如切换到 Google 的 DNS (8.8.8.8) 或 Cloudflare 的 DNS (1.1.1.1)。
+2. 权限问题
+   - 确保对目标目录有写入权限
+   - 检查防火墙设置
 
-### 5. 替代下载方式
+3. 文件占用
+   - 确保目标文件没有被其他程序占用
+   - 关闭可能使用这些文件的程序
 
-本脚本已经集成了多种下载方式（requests, urllib, curl），如果所有方法都失败，可以手动下载文件：
+## 注意事项
 
-1. 手动访问配置文件中的 URL 下载文件
-2. 将下载的文件放置在 `temp` 目录中
-3. 重新运行脚本，它会跳过下载步骤，直接执行复制操作
-
-或者使用 Python 脚本中的以下替代方法手动下载：
-
-```python
-# 方法1: requests
-import requests
-r = requests.get('URL', stream=True)
-with open('file.dat', 'wb') as f:
-    for chunk in r.iter_content(chunk_size=8192):
-        f.write(chunk)
-
-# 方法2: urllib
-import urllib.request
-urllib.request.urlretrieve('URL', 'file.dat')
-```
-
-## 高级用法
-
-### 自定义下载地址
-
-如果默认的下载地址不可用，您可以修改配置文件中的URL，使用镜像站点或代理服务：
-
-1. 使用 jsdelivr 镜像：将 `testingcf.jsdelivr.net` 替换为 `fastly.jsdelivr.net` 或 `gcore.jsdelivr.net`
-2. 使用 GitHub 代理：例如 `https://gh-proxy.com/`, `https://ghproxy.com/` 等
-
-### 手动更新单个文件
-
-如果只有某个文件下载失败，可以手动下载并放入 temp 目录，然后重新运行脚本。 
+1. 脚本使用 Windows 环境变量 `%APPDATA%` 定位用户配置目录
+2. 需要确保系统支持 PowerShell 命令
+3. 建议定期运行以保持规则文件更新 
